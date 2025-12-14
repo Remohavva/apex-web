@@ -206,37 +206,9 @@
                 </a>
             </div>
 
-            <!-- Squad Selectors -->
+            <!-- Squad Selectors - REMOVED -->
             <div class="flex-1 py-8 flex flex-col gap-2 px-2 md:px-4">
-                <div class="text-[10px] font-mono text-gray-600 mb-2 px-2 hidden md:block">SELECT DIVISION</div>
-
-                <button onclick="loadSquad('FPS')"
-                    class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200 active"
-                    data-cat="FPS">
-                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
-                    <span class="font-head text-xl hidden md:block tracking-wide">FPS</span>
-                </button>
-
-                <button onclick="loadSquad('MOBA')"
-                    class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200"
-                    data-cat="MOBA">
-                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
-                    <span class="font-head text-xl hidden md:block tracking-wide">MOBA</span>
-                </button>
-
-                <button onclick="loadSquad('RACING')"
-                    class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200"
-                    data-cat="RACING">
-                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
-                    <span class="font-head text-xl hidden md:block tracking-wide">RACING</span>
-                </button>
-
-                <button onclick="loadSquad('STRATEGY')"
-                    class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200"
-                    data-cat="STRATEGY">
-                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
-                    <span class="font-head text-xl hidden md:block tracking-wide">STRATEGY</span>
-                </button>
+                <!-- Selectors Removed for Single Page View -->
             </div>
 
             <!-- Bottom Status -->
@@ -366,10 +338,8 @@
                 decryptScreen.style.opacity = '0';
                 setTimeout(() => decryptScreen.remove(), 500);
 
-                // Check URL params after boot
-                const urlParams = new URLSearchParams(window.location.search);
-                const category = urlParams.get('squad') || 'FPS';
-                loadSquad(category);
+                // FORCE STRATEGY
+                loadSquad('STRATEGY');
             }
         }
         playBoot();
@@ -417,12 +387,7 @@
             const data = rosterData[category];
             if (!data) return;
 
-            // Update UI
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                if (btn.dataset.cat === category) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-
+            // Header Update
             document.getElementById('squad-header').innerText = `${category} DIVISION`;
             document.getElementById('squad-header').setAttribute('data-text', `${category} DIVISION`); // For glitch effect reset
 
