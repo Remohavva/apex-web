@@ -1,4 +1,11 @@
 import './style.css'
+import Lenis from 'lenis'
+
+// Initialize Lenis for smooth scrolling
+const lenis = new Lenis({
+  autoRaf: true,
+});
+
 
 // --- 1. BOOT SEQUENCE ---
 const bootScreen = document.getElementById('boot-screen');
@@ -17,6 +24,28 @@ let logIndex = 0;
 function runBoot() {
   if (!bootScreen || !bootLog || !bootBar) return;
 
+  // Logic to show boot screen:
+  // 1. Show on Refresh (Reload)
+  // 2. Show on First Entry (No referrer or external referrer)
+  // 3. Hide on Internal Navigation (Referrer is same domain)
+
+  const navEntry = performance.getEntriesByType("navigation")[0];
+  const isReload = navEntry ? navEntry.type === 'reload' : false;
+  const isInternal = document.referrer && document.referrer.includes(window.location.host);
+
+  // If it's NOT a reload AND it IS internal navigation -> Skip Boot
+  // Special check: ensure we don't skip if we are already running (logIndex > 0 prevents loop issue if logic was inside)
+  // But wait, this function is recursive. 
+  // Should only check this logic ONCE at start.
+
+  if (logIndex === 0) {
+    if (!isReload && isInternal) {
+      bootScreen.style.display = 'none';
+      bootScreen.remove();
+      return;
+    }
+  }
+
   if (logIndex < logs.length) {
     const div = document.createElement('div');
     div.className = 'boot-line';
@@ -33,7 +62,10 @@ function runBoot() {
     setTimeout(() => {
       bootScreen.style.transition = "opacity 0.5s ease";
       bootScreen.style.opacity = "0";
-      setTimeout(() => bootScreen.remove(), 500);
+      setTimeout(() => {
+        bootScreen.remove();
+        // Removed sessionStorage setting to allow refresh to show it again
+      }, 500);
     }, 500);
   }
 }
@@ -166,48 +198,52 @@ if (cursor) {
 
 // --- 4. OPTIMIZED 3D TILT EFFECT ---
 // Uses requestAnimationFrame to prevent layout thrashing
+
 const cards = document.querySelectorAll('.tilt-card');
 
-cards.forEach(card => {
-  let rect;
-  let width, height;
-  let mouseX, mouseY;
-  let isHovering = false;
+if (matchMedia('(pointer:fine)').matches) {
+  cards.forEach(card => {
+    let rect;
+    let width, height;
+    let mouseX, mouseY;
+    let isHovering = false;
 
-  const updateTilt = () => {
-    if (!isHovering) return;
+    const updateTilt = () => {
+      if (!isHovering) return;
 
-    // Calculate percentage (-1 to 1)
-    const xPct = (mouseX / width - 0.5) * 2;
-    const yPct = (mouseY / height - 0.5) * 2;
 
-    // Rotation
-    const rotateX = yPct * -10; // Invert Y for correct tilt
-    const rotateY = xPct * 10;
+      // Calculate percentage (-1 to 1)
+      const xPct = (mouseX / width - 0.5) * 2;
+      const yPct = (mouseY / height - 0.5) * 2;
 
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      // Rotation
+      const rotateX = yPct * -10; // Invert Y for correct tilt
+      const rotateY = xPct * 10;
 
-    requestAnimationFrame(updateTilt);
-  };
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
-  card.addEventListener('mouseenter', () => {
-    isHovering = true;
-    rect = card.getBoundingClientRect();
-    width = rect.width;
-    height = rect.height;
-    requestAnimationFrame(updateTilt);
+      requestAnimationFrame(updateTilt);
+    };
+
+    card.addEventListener('mouseenter', () => {
+      isHovering = true;
+      rect = card.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      requestAnimationFrame(updateTilt);
+    });
+
+    card.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      isHovering = false;
+      card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+    });
   });
-
-  card.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
-  });
-
-  card.addEventListener('mouseleave', () => {
-    isHovering = false;
-    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
-  });
-});
+}
 
 // --- 5. TEXT DECRYPTION/SCRAMBLE ---
 const scrambleElements = document.querySelectorAll('[data-scramble]');
