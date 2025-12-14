@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLASSIFIED ROSTER // APEX MLRIT</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Chakra+Petch:wght@300;400;500;600;700&family=JetBrains+Mono:wght@100;400;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sys-black': '#050505',
+                        'sys-dark': '#0a0a0a',
+                        'sys-red': '#ff003c',
+                        'sys-blue': '#00f0ff',
+                        'sys-gray': '#2a2a2a',
+                    },
+                    fontFamily: {
+                        'head': ['Archivo Black', 'sans-serif'],
+                        'body': ['Chakra Petch', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CORE ATMOSPHERE */
+        body {
+            background-color: #050505;
+            color: #e0e0e0;
+            cursor: crosshair;
+            overflow: hidden; /* Manage scroll manually for app-feel */
+        }
+
+        /* SCANLINES */
+        .crt-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none; z-index: 50;
+        }
+
+        /* LOADING ANIMATION */
+        #decrypt-screen {
+            position: fixed; inset: 0; background: #000; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+        
+        /* CARD STYLES */
+        .agent-card {
+            background: rgba(15, 15, 15, 0.8);
+            border: 1px solid #333;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+        .agent-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: #ff003c; transform: scaleX(0); transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        .agent-card:hover {
+            border-color: #ff003c;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(255, 0, 60, 0.2);
+        }
+        .agent-card:hover::before { transform: scaleX(1); }
+
+        /* RADAR CHART */
+        .radar-chart {
+            filter: drop-shadow(0 0 5px rgba(255, 0, 60, 0.5));
+        }
+        .radar-poly {
+            fill: rgba(255, 0, 60, 0.2);
+            stroke: #ff003c;
+            stroke-width: 2;
+            transition: all 1s ease;
+        }
+
+        /* UTILITIES */
+        .glitch-text:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #ff003c;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .category-btn.active {
+            background: #ff003c;
+            color: black;
+            border-color: #ff003c;
+            box-shadow: 0 0 15px rgba(255, 0, 60, 0.5);
+        }
+        
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+
+    </style>
+</head>
+<body class="bg-grid-pattern bg-[length:40px_40px]">
+
+    <!-- CRT EFFECT -->
+    <div class="crt-overlay"></div>
+
+    <!-- 1. DECRYPTION SCREEN -->
+    <div id="decrypt-screen">
+        <div class="font-mono text-sys-red text-xl mb-4 blink">/// ESTABLISHING SECURE LINK ///</div>
+        <div class="w-64 h-1 bg-gray-900 overflow-hidden relative">
+            <div id="decrypt-bar" class="absolute top-0 left-0 h-full bg-sys-red w-0 transition-all duration-100 ease-out"></div>
+        </div>
+        <div id="decrypt-log" class="font-mono text-xs text-gray-500 mt-2 h-6">waiting for handshake...</div>
+    </div>
+
+    <!-- MAIN UI LAYOUT -->
+    <div class="flex h-screen overflow-hidden relative z-10">
+        
+        <!-- 2. SIDEBAR NAVIGATION -->
+        <aside class="w-20 md:w-64 border-r border-gray-800 bg-sys-black/90 flex flex-col justify-between backdrop-blur-md">
+            <!-- Top Branding -->
+            <div class="p-6 border-b border-gray-800">
+                <a href="apex_mlrit.html" class="block group">
+                    <div class="text-4xl font-head text-white group-hover:text-sys-red transition-colors">APEX</div>
+                    <div class="text-xs font-mono text-gray-500 tracking-[0.3em] group-hover:text-white transition-colors">DATABASE</div>
+                </a>
+            </div>
+
+            <!-- Squad Selectors -->
+            <div class="flex-1 py-8 flex flex-col gap-2 px-2 md:px-4">
+                <div class="text-[10px] font-mono text-gray-600 mb-2 px-2 hidden md:block">SELECT DIVISION</div>
+                
+                <button onclick="loadSquad('FPS')" class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200 active" data-cat="FPS">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
+                    <span class="font-head text-xl hidden md:block tracking-wide">FPS</span>
+                </button>
+
+                <button onclick="loadSquad('MOBA')" class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200" data-cat="MOBA">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
+                    <span class="font-head text-xl hidden md:block tracking-wide">MOBA</span>
+                </button>
+
+                <button onclick="loadSquad('RACING')" class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200" data-cat="RACING">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
+                    <span class="font-head text-xl hidden md:block tracking-wide">RACING</span>
+                </button>
+
+                <button onclick="loadSquad('STRATEGY')" class="category-btn group flex items-center gap-4 p-4 border border-transparent hover:border-gray-700 transition-all duration-200" data-cat="STRATEGY">
+                    <div class="w-2 h-2 bg-gray-500 rounded-full group-hover:bg-sys-red transition-colors"></div>
+                    <span class="font-head text-xl hidden md:block tracking-wide">STRATEGY</span>
+                </button>
+            </div>
+
+            <!-- Bottom Status -->
+            <div class="p-6 border-t border-gray-800">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-2 h-2 bg-green-500 animate-pulse rounded-full"></div>
+                    <span class="font-mono text-xs text-green-500">LIVE CONNECTION</span>
+                </div>
+                <div class="font-mono text-[10px] text-gray-600">
+                    SECURE SERVER<br>HYDERABAD, IN
+                </div>
+            </div>
+        </aside>
+
+        <!-- 3. MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col relative overflow-hidden">
+            <!-- Header -->
+            <header class="h-20 border-b border-gray-800 flex items-center justify-between px-8 bg-sys-black/50 backdrop-blur-sm">
+                <div>
+                    <h1 id="squad-header" class="text-3xl font-head uppercase text-white glitch-text">FPS DIVISION</h1>
+                    <div class="text-[10px] font-mono text-sys-red">/// AUTHORIZED PERSONNEL ONLY</div>
+                </div>
+                <div class="hidden md:flex gap-8 font-mono text-xs text-gray-400">
+                    <div>WIN RATE: <span id="win-rate" class="text-white">87%</span></div>
+                    <div>ACTIVE AGENTS: <span id="agent-count" class="text-white">3</span></div>
+                    <div>STATUS: <span class="text-green-500">DEPLOYED</span></div>
+                </div>
+            </header>
+
+            <!-- Agent Grid (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-8 relative">
+                <!-- Background Decoration -->
+                <div class="absolute top-10 right-10 w-64 h-64 border border-gray-800 opacity-20 rounded-full flex items-center justify-center pointer-events-none animate-spin-slow">
+                    <div class="w-48 h-48 border border-gray-800 border-dashed rounded-full"></div>
+                </div>
+
+                <div id="roster-grid" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-8 pb-20 max-w-[1600px] mx-auto">
+                    <!-- Cards Injected Here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // --- DATA SOURCE ---
+        const rosterData = {
+            "FPS": {
+                meta: { wr: "87%", status: "DEPLOYED" },
+                agents: [
+                    {
+                        id: "AGT-09", callsign: "PHANTOM", name: "Rahul Verma", role: "DUELIST", rank: "RADIANT #45",
+                        style: "Aggressive Entry", img: "https://images.unsplash.com/photo-1624138784181-2999e46ef284?auto=format&fit=crop&q=80",
+                        stats: { aim: 98, iq: 75, util: 60, clutch: 85 }
+                    },
+                    {
+                        id: "AGT-12", callsign: "SPECTRE", name: "Arjun Reddy", role: "CONTROLLER", rank: "IMMORTAL 3",
+                        style: "Tactical IGL", img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80",
+                        stats: { aim: 82, iq: 99, util: 95, clutch: 90 }
+                    },
+                    {
+                        id: "AGT-04", callsign: "ODIN", name: "Vikram Singh", role: "INITIATOR", rank: "IMMORTAL 2",
+                        style: "Info Gathering", img: "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&q=80",
+                        stats: { aim: 85, iq: 88, util: 92, clutch: 70 }
+                    },
+                    {
+                        id: "AGT-X1", callsign: "VIPER", name: "Sanya K", role: "SENTINEL", rank: "IMMORTAL 1",
+                        style: "Lurker / Anchor", img: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&q=80",
+                        stats: { aim: 88, iq: 92, util: 85, clutch: 95 }
+                    }
+                ]
+            },
+            "MOBA": {
+                meta: { wr: "72%", status: "TRAINING" },
+                agents: [
+                    {
+                        id: "LGD-01", callsign: "TITAN", name: "Suresh K.", role: "POS 1 CARRY", rank: "CHALLENGER",
+                        style: "Hyper Carry", img: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80",
+                        stats: { aim: 90, iq: 85, util: 80, clutch: 95 }
+                    },
+                    {
+                        id: "LGD-05", callsign: "ORACLE", name: "Priya M.", role: "POS 5 SUPP", rank: "GRANDMASTER",
+                        style: "Shotcaller", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80",
+                        stats: { aim: 60, iq: 98, util: 100, clutch: 80 }
+                    }
+                ]
+            },
+            "RACING": {
+                meta: { wr: "95%", status: "RACE WEEK" },
+                agents: [
+                    {
+                        id: "DRF-86", callsign: "DRIFT KING", name: "Karan B.", role: "DRIVER", rank: "PRO LIC.",
+                        style: "Time Attack", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80",
+                        stats: { aim: 95, iq: 90, util: 70, clutch: 88 }
+                    }
+                ]
+            },
+            "STRATEGY": {
+                meta: { wr: "80%", status: "ONLINE" },
+                agents: [
+                    {
+                        id: "GM-01", callsign: "MAGNUS", name: "Rohan D.", role: "GRANDMASTER", rank: "2300 ELO",
+                        style: "Positional Play", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80",
+                        stats: { aim: 50, iq: 100, util: 90, clutch: 95 }
+                    }
+                ]
+            }
+        };
+
+        // --- 1. BOOT SEQUENCE ---
+        const decryptScreen = document.getElementById('decrypt-screen');
+        const decryptBar = document.getElementById('decrypt-bar');
+        const decryptLog = document.getElementById('decrypt-log');
+        const logs = ["BYPASSING FIREWALL...", "DECRYPTING BIOMETRICS...", "FETCHING COMBAT DATA...", "RENDERING PROFILES...", "ACCESS GRANTED"];
+        
+        let loadIdx = 0;
+        function playBoot() {
+            if(loadIdx < logs.length) {
+                decryptLog.innerText = `> ${logs[loadIdx]}`;
+                decryptBar.style.width = `${(loadIdx + 1) * 20}%`;
+                loadIdx++;
+                setTimeout(playBoot, 200);
+            } else {
+                decryptScreen.style.opacity = '0';
+                setTimeout(() => decryptScreen.remove(), 500);
+                
+                // Check URL params after boot
+                const urlParams = new URLSearchParams(window.location.search);
+                const category = urlParams.get('squad') || 'FPS';
+                loadSquad(category);
+            }
+        }
+        playBoot();
+
+        // --- 2. RADAR CHART GENERATOR (SVG) ---
+        function createRadarChart(stats, size=120) {
+            // Stats: Aim, IQ, Util, Clutch
+            // We map these to 4 points on a diamond/circle
+            const center = size / 2;
+            const radius = (size / 2) - 10;
+            
+            // Points: Top (Aim), Right (IQ), Bottom (Util), Left (Clutch)
+            // Values 0-100 mapped to radius distance
+            
+            const p1 = { x: center, y: center - (radius * (stats.aim / 100)) }; // Top
+            const p2 = { x: center + (radius * (stats.iq / 100)), y: center }; // Right
+            const p3 = { x: center, y: center + (radius * (stats.util / 100)) }; // Bottom
+            const p4 = { x: center - (radius * (stats.clutch / 100)), y: center }; // Left
+            
+            const pointsString = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`;
+            
+            // Background grid (static diamond)
+            const bgPoints = `${center},${center-radius} ${center+radius},${center} ${center},${center+radius} ${center-radius},${center}`;
+
+            return `
+                <svg width="${size}" height="${size}" class="radar-chart">
+                    <!-- Background Grid -->
+                    <polygon points="${bgPoints}" fill="none" stroke="#333" stroke-width="1" />
+                    <!-- Data Polygon -->
+                    <polygon points="${pointsString}" class="radar-poly" />
+                    <!-- Axis Lines -->
+                    <line x1="${center}" y1="${center-radius}" x2="${center}" y2="${center+radius}" stroke="#222" />
+                    <line x1="${center-radius}" y1="${center}" x2="${center+radius}" y2="${center}" stroke="#222" />
+                    <!-- Labels -->
+                    <text x="${center}" y="10" fill="#666" font-size="8" text-anchor="middle">AIM</text>
+                    <text x="${size-5}" y="${center+3}" fill="#666" font-size="8" text-anchor="end">IQ</text>
+                    <text x="${center}" y="${size-2}" fill="#666" font-size="8" text-anchor="middle">UTIL</text>
+                    <text x="5" y="${center+3}" fill="#666" font-size="8" text-anchor="start">CLUTCH</text>
+                </svg>
+            `;
+        }
+
+        // --- 3. LOAD SQUAD LOGIC ---
+        function loadSquad(category) {
+            const data = rosterData[category];
+            if(!data) return;
+
+            // Update UI
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if(btn.dataset.cat === category) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            document.getElementById('squad-header').innerText = `${category} DIVISION`;
+            document.getElementById('squad-header').setAttribute('data-text', `${category} DIVISION`); // For glitch effect reset
+            
+            document.getElementById('win-rate').innerText = data.meta.wr;
+            document.getElementById('agent-count').innerText = data.agents.length;
+
+            const grid = document.getElementById('roster-grid');
+            grid.innerHTML = ''; // Clear existing
+
+            // Staggered Entry Animation
+            data.agents.forEach((agent, index) => {
+                const card = document.createElement('div');
+                card.className = 'agent-card opacity-0 translate-y-10'; // Start hidden
+                card.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+                
+                card.innerHTML = `
+                    <div class="h-48 relative overflow-hidden group-hover:grayscale-0 transition-all duration-500">
+                        <img src="${agent.img}" class="w-full h-full object-cover filter grayscale group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-sys-dark to-transparent opacity-90"></div>
+                        <div class="absolute bottom-4 left-4">
+                            <h2 class="text-3xl font-head text-white leading-none">${agent.callsign}</h2>
+                            <div class="font-mono text-xs text-sys-red">${agent.role}</div>
+                        </div>
+                        <div class="absolute top-2 right-2 font-mono text-[9px] text-gray-500 border border-gray-700 px-2 py-1 bg-black/50">
+                            ${agent.id}
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 flex gap-4">
+                        <!-- Stats Visualization -->
+                        <div class="shrink-0">
+                            ${createRadarChart(agent.stats)}
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="flex-1 flex flex-col justify-center space-y-2">
+                            <div class="space-y-1">
+                                <div class="text-[9px] font-mono text-gray-500 uppercase">Operative Name</div>
+                                <div class="text-sm font-bold text-gray-200">${agent.name}</div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="text-[9px] font-mono text-gray-500 uppercase">Current Rank</div>
+                                <div class="text-sm font-bold text-white">${agent.rank}</div>
+                            </div>
+                             <div class="space-y-1">
+                                <div class="text-[9px] font-mono text-gray-500 uppercase">Combat Style</div>
+                                <div class="text-xs font-mono text-sys-blue italic">"${agent.style}"</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Bar -->
+                    <div class="bg-black/50 p-2 flex justify-between items-center border-t border-gray-800">
+                        <div class="font-mono text-[9px] text-gray-600 px-2">STATUS: <span class="text-green-500">ACTIVE</span></div>
+                        <button class="px-4 py-1 bg-gray-800 hover:bg-sys-red text-white font-mono text-[10px] transition-colors uppercase">
+                            View Logs
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Add CSS Animation Keyframe dynamically
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            @keyframes fadeInUp {
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+    </script>
+</body>
+</html>
